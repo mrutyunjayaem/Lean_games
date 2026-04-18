@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { addPlayerToGame } from "../lib/firebase";
+import { addPlayerToGame, subscribeToGame } from "../lib/firebase";
 
 export default function LobbyPage() {
   const router = useRouter();
@@ -8,13 +8,14 @@ export default function LobbyPage() {
 
   const [playerName, setPlayerName] = useState("");
   const [playerId, setPlayerId] = useState("");
+  const [game, setGame] = useState(null);
 
+  // ✅ Add player to game
   useEffect(() => {
     if (!gameId) return;
 
     const name = localStorage.getItem("playerName");
 
-    // 🔥 Always maintain a fixed player ID
     let storedPlayerId = localStorage.getItem("playerId");
 
     if (!storedPlayerId) {
@@ -25,10 +26,36 @@ export default function LobbyPage() {
     setPlayerName(name);
     setPlayerId(storedPlayerId);
 
-    // 🔥 IMPORTANT: Always write using SAME playerId (no duplicates)
     addPlayerToGame(gameId, name, storedPlayerId);
-
   }, [gameId]);
+
+  // 🔥 NEW: Listen to game state
+  useEffect(() => {
+    if (!gameId) return;
+
+    const unsubscribe = subscribeToGame(gameId, (gameData) => {
+      setGame(gameData);
+    });
+
+    return () => unsubscribe && unsubscribe();
+  }, [gameId]);
+
+  // 🔥 NEW: Redirect when game starts
+  useEffect(() => {
+    if (!game) return;
+
+    // ⚠️ depends on how you mark game start
+    if (game.phase === "LOBBY") return;
+
+    // 👉 Assign team (simple logic for now)
+    const teamId = game.teamAssignments?.[playerId];
+
+    if (!teamId) return;
+
+    console.log("Redirecting to game:", gameId, teamId);
+
+    router.push(`/game/${gameId}/${teamId}`);
+  }, [game, playerId]);
 
   return (
     <div style={{ padding: "30px" }}>
@@ -38,7 +65,7 @@ export default function LobbyPage() {
       <p><b>Player:</b> {playerName}</p>
       <p><b>ID:</b> {playerId}</p>
 
-      <p>Waiting for other players...</p>
+      <p>Waiting for host to start the game...</p>
     </div>
   );
 }
