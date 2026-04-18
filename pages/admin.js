@@ -20,17 +20,18 @@ export default function AdminPage() {
   const [processing, setProcessing] = useState(false);
   const [totalRounds, setTotalRounds] = useState(5);
 
+  // 🔌 Subscriptions
   useEffect(() => {
     if (!gameId) return;
 
-    const unsub1 = subscribeToGame(gameId, setGame);
-    const unsub2 = subscribeToTeams(gameId, setTeams);
-    const unsub3 = subscribeToPlayers(gameId, setPlayers);
+    const unsubGame = subscribeToGame(gameId, setGame);
+    const unsubTeams = subscribeToTeams(gameId, setTeams);
+    const unsubPlayers = subscribeToPlayers(gameId, setPlayers);
 
     return () => {
-      unsub1();
-      unsub2();
-      unsub3();
+      if (unsubGame) unsubGame();
+      if (unsubTeams) unsubTeams();
+      if (unsubPlayers) unsubPlayers();
     };
   }, [gameId]);
 
@@ -38,11 +39,22 @@ export default function AdminPage() {
 
   const totalPlayers = players.length;
 
+  // 🚀 Start Game
   async function handleStart() {
-    await updateGame(gameId, { totalRounds });
-    await startGame(gameId);
+    try {
+      // ensure rounds are set
+      await updateGame(gameId, { totalRounds });
+
+      // 🔥 IMPORTANT: startGame should set status = "playing"
+      await startGame(gameId);
+
+      console.log("Game started");
+    } catch (e) {
+      console.error("Start game error:", e);
+    }
   }
 
+  // 🔄 Next Round
   async function handleProcessAndAdvance() {
     setProcessing(true);
     try {
@@ -68,10 +80,16 @@ export default function AdminPage() {
       <div style={{ marginBottom: "20px" }}>
         <p><b>Teams:</b> {teams.length}</p>
         <p><b>Players:</b> {totalPlayers}</p>
+
+        {/* ✅ Consistent status usage */}
         <p><b>Status:</b> {game.status}</p>
-        <p><b>Round:</b> {game.currentRound} / {game.totalRounds}</p>
+
+        <p>
+          <b>Round:</b> {game.currentRound || 1} / {game.totalRounds || totalRounds}
+        </p>
       </div>
 
+      {/* 🟢 Lobby State */}
       {game.status === "lobby" && (
         <div>
           <label>Number of Rounds</label>
@@ -84,12 +102,14 @@ export default function AdminPage() {
           <button
             onClick={handleStart}
             disabled={players.length === 0}
+            style={{ marginLeft: "10px" }}
           >
             Start Game
           </button>
         </div>
       )}
 
+      {/* 🔵 Playing State */}
       {game.status === "playing" && (
         <div>
           <h3>Round {game.currentRound}</h3>
@@ -103,14 +123,23 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* 🟡 Debug section (optional but useful) */}
+      <div style={{ marginTop: "20px", background: "#f5f5f5", padding: "10px" }}>
+        <h3>Debug Info</h3>
+        <pre>{JSON.stringify(game, null, 2)}</pre>
+      </div>
+
       <h2>Teams</h2>
 
       {teams.map((team) => (
-        <div key={team.id} style={{
-          border: "1px solid black",
-          padding: "10px",
-          marginBottom: "10px"
-        }}>
+        <div
+          key={team.id}
+          style={{
+            border: "1px solid black",
+            padding: "10px",
+            marginBottom: "10px",
+          }}
+        >
           <h3>{team.teamName}</h3>
           <p>Players: {team.playerCount || 0} / 4</p>
           <p>Score: {team.totalScore || 0}</p>
@@ -120,11 +149,14 @@ export default function AdminPage() {
       <h2>Players</h2>
 
       {players.map((p) => (
-        <div key={p.id} style={{
-          border: "1px solid gray",
-          padding: "5px",
-          marginBottom: "5px"
-        }}>
+        <div
+          key={p.id}
+          style={{
+            border: "1px solid gray",
+            padding: "5px",
+            marginBottom: "5px",
+          }}
+        >
           <p><b>{p.name}</b></p>
           <p>Team: {p.teamId}</p>
           <p>Role: {p.role}</p>
