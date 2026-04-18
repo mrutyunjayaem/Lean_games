@@ -10,7 +10,10 @@ export default function Home() {
   const [gameId, setGameId] = useState("");
   const [error, setError] = useState("");
 
+  // ✅ Create Game (Host)
   async function handleCreateGame() {
+    setError("");
+
     if (!playerName.trim()) {
       setError("Enter your name");
       return;
@@ -19,10 +22,12 @@ export default function Home() {
     try {
       const id = await createGameSession(playerName);
 
-      localStorage.setItem("playerName", playerName);
+      // Store data
+      localStorage.setItem("playerName", playerName.trim());
       localStorage.setItem("gameId", id);
       localStorage.setItem("isHost", "true");
 
+      // ✅ Correct (no change needed here)
       router.push(`/admin?gameId=${id}`);
     } catch (e) {
       console.error(e);
@@ -30,16 +35,23 @@ export default function Home() {
     }
   }
 
+  // ✅ Join Game (Player)
   function handleJoinGame() {
+    setError("");
+
     if (!playerName.trim() || !gameId.trim()) {
       setError("Enter name and game code");
       return;
     }
 
-    localStorage.setItem("playerName", playerName);
-    localStorage.setItem("gameId", gameId.toUpperCase());
+    const formattedGameId = gameId.trim().toUpperCase();
 
-    router.push(`/lobby?gameId=${gameId.toUpperCase()}`);
+    // Store data
+    localStorage.setItem("playerName", playerName.trim());
+    localStorage.setItem("gameId", formattedGameId);
+
+    // ✅ Correct (DO NOT change this)
+    router.push(`/lobby?gameId=${formattedGameId}`);
   }
 
   return (
@@ -59,7 +71,11 @@ export default function Home() {
       {screen === "home" && (
         <>
           <button onClick={() => setScreen("create")}>Host Game</button>
-          <button onClick={() => setScreen("join")} style={{ marginLeft: "10px" }}>
+
+          <button
+            onClick={() => setScreen("join")}
+            style={{ marginLeft: "10px" }}
+          >
             Join Game
           </button>
         </>
@@ -67,8 +83,13 @@ export default function Home() {
 
       {screen === "create" && (
         <>
-          <button onClick={handleCreateGame}>Create Game Room</button>
-          <button onClick={() => setScreen("home")}>Back</button>
+          <button onClick={handleCreateGame}>
+            Create Game Room
+          </button>
+
+          <button onClick={() => setScreen("home")}>
+            Back
+          </button>
         </>
       )}
 
@@ -78,15 +99,26 @@ export default function Home() {
             type="text"
             placeholder="Game Code"
             value={gameId}
-            onChange={(e) => setGameId(e.target.value.toUpperCase())}
-            style={{ width: "100%", padding: "10px", marginTop: "10px" }}
+            onChange={(e) =>
+              setGameId(e.target.value.toUpperCase())
+            }
+            style={{
+              width: "100%",
+              padding: "10px",
+              marginTop: "10px",
+            }}
           />
 
-          <button onClick={handleJoinGame} style={{ marginTop: "10px" }}>
+          <button
+            onClick={handleJoinGame}
+            style={{ marginTop: "10px" }}
+          >
             Join Game
           </button>
 
-          <button onClick={() => setScreen("home")}>Back</button>
+          <button onClick={() => setScreen("home")}>
+            Back
+          </button>
         </>
       )}
     </div>
