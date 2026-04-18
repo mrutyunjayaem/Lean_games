@@ -28,7 +28,7 @@ export default function GamePage() {
   }, [gameId, teamId]);
 
   useEffect(() => {
-    if (game && game.currentRound > lastSeenRound && lastSeenRound > 0) {
+    if (game && game.currentRound > lastSeenRound) {
       setShowResults(true);
     }
   }, [game?.currentRound]);
